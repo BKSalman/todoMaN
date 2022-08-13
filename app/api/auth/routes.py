@@ -2,18 +2,16 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from fastapi import APIRouter, status, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from uuid import uuid4, UUID
-from jose import jwt, JWTError
-from .schemas import UserResponse, UserRequest, TokenData
+from .schemas import UserResponse, UserRequest
 from db.models import User
-from utils import get_hashed_password, verify_password, create_access_token, create_refresh_token, JWT_SECRET_KEY, ALGORITHM
+from utils import get_hashed_password, verify_password, create_access_token, create_refresh_token
 from db.db import Session
 from ..common_schemas import TokenSchema
+from ..deps import get_current_user
 
 router = APIRouter(
     prefix="/auth"
 )
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 with Session() as s :
     @router.post('/signup', response_model=UserResponse)
@@ -59,28 +57,21 @@ with Session() as s :
             refresh_token= create_refresh_token(user.email),
         )
     
-    async def get_current_user(token: str = Depends(oauth2_scheme)):
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-        try:
-            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
-            email: str = payload.get("sub")
-            if email is None:
-                raise credentials_exception
-            token_data = TokenData(email= email)
-        except JWTError:
-            raise credentials_exception
-        user = s.query(User).filter_by(email=token_data.email).first()
-        if user is None:
-            raise credentials_exception
-        return user
+        # user = s.query(User).filter_by(email=token_data.email).first()
+        # if user is None:
+        #     raise credentials_exception
+        # return user
     
     @router.get("/users/me")
     async def read_users_me(current_user: UserResponse = Depends(get_current_user), response_model= UserResponse):
-        return UserResponse(id= current_user.id, email= current_user.email, username= current_user.username,)
+        user = s.query(User).filter_by(email= current_user.email).first()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},)
+                
+        return UserResponse(id= user.id, email= user.email, username= user.username,)
     
     @router.get('/users')
     def get_users():
