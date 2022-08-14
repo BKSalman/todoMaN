@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy.dialects.postgresql import UUID
 from fastapi import HTTPException
 import re
-from api.auth.schemas import UserResponse
+from api.users.schemas import UserResponse
 
 Base = declarative_base()
 

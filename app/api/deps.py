@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from .auth.schemas import TokenData
+from .users.schemas import TokenData
 from utils import JWT_SECRET_KEY, ALGORITHM
 from jose import jwt, JWTError
 

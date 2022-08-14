@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")
 from fastapi import APIRouter
 from .items import routes as items_routes
-from .auth import routes as auth_routes
+from .users import routes as auth_routes
 
 router = APIRouter(
     prefix="/api"
